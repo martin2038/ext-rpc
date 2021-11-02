@@ -1,0 +1,18 @@
+dependencies {
+//    implementation platform("io.quarkus:quarkus-bom:${quarkusPlatformVersion}")
+    api "io.quarkus:quarkus-arc-deployment:${quarkusPlatformVersion}"
+    api "io.quarkus:quarkus-agroal-deployment:${quarkusPlatformVersion}"
+    api project(':ext-rpc')
+
+    api 'com.bt.rpc:rpc-api:1.0.0'
+    annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusPlatformVersion}")
+//    api 'org.reflections:reflections:0.10.2'
+
+//    testImplementation('io.quarkus:quarkus-junit5-internal')
+//    testImplementation "org.jboss.slf4j:slf4j-jboss-logmanager"
+//    testImplementation('io.quarkus:quarkus-junit5'){
+//        exclude module: 'quarkus-bootstrap-maven-resolver'
+//    }
+//    testImplementation('io.quarkus:quarkus-test-h2')
+//    testImplementation('io.quarkus:quarkus-test-h2-deployment')
+}

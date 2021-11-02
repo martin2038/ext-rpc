@@ -1,0 +1,8 @@
+---
+name: "RPC for Quarkus"
+metadata:
+  keywords:
+    - "rpc"
+  categories:
+    - "rpc"
+  status: "preview"
