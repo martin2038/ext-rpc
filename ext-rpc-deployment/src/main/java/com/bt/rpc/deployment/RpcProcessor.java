@@ -47,14 +47,14 @@ public class RpcProcessor {
 
         for (AnnotationInstance i : indexBuildItem.getIndex().getAnnotations(RPC_SERVICE)) {
             var cls = i.target().asClass();
-            DotName dotName = cls.name();
+            var dotName = cls.name().toString();
             if(clientExists){
-                proxy.produce(new NativeImageProxyDefinitionBuildItem(dotName.toString()));
-                LOG.info("=== Client === Proxy : " + dotName);
+                proxy.produce(new NativeImageProxyDefinitionBuildItem(dotName));
+                LOG.info("=== Client Proxy : " + dotName);
             }
             if(serverExists){
-                reflective.produce(new ReflectiveClassBuildItem(true, false, dotName.toString()));
-                LOG.info("=== Server === Reflective : " + dotName);
+                reflective.produce(new ReflectiveClassBuildItem(true, false, dotName));
+                LOG.info("=== Server Reflective : " + dotName);
             }
 
             var methods = cls.methods();
@@ -97,7 +97,7 @@ public class RpcProcessor {
     private static void addRefDtoClass(Set<DotName> set, BuildProducer<ReflectiveClassBuildItem> reflective, Collection<DotName> clz){
         for(var c : clz){
             if (set.add(c) && ! c.toString().startsWith("java.") ){
-                LOG.info("====== Reflective DTO :: "+ c);
+                LOG.info("====== Reflective : "+ c);
                 reflective.produce(new ReflectiveClassBuildItem(true, true,  c.toString()));
             }
         }
