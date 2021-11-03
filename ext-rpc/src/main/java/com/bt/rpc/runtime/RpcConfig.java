@@ -6,7 +6,7 @@ import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
 
 @ConfigRoot(name = "rpc", phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
-public class Config {
+public class RpcConfig {
     ///**
     // * Data sources config
     // */
@@ -18,8 +18,8 @@ public class Config {
     /**
      * mybatis-config.xml files path, use `,` for more than one .
      */
-    @ConfigItem(defaultValue = "mybatis-config.xml")
-    public String configFiles;
+    @ConfigItem(defaultValue = "config.xml")
+    public String configFil;
 
 
     ///**

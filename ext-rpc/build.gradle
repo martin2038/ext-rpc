@@ -1,7 +1,6 @@
 plugins {
     id "io.quarkus.extension"// version "2.4.0.Final"
 }
-//apply plugin:  'io.quarkus.extensions'
 
 quarkusExtension {
     deploymentModule = 'deployment'
@@ -12,8 +11,6 @@ dependencies {
 //    implementation platform("io.quarkus:quarkus-bom:${quarkusPlatformVersion}")
 
     api "io.quarkus:quarkus-arc:${quarkusPlatformVersion}"
-//    api "io.quarkus:quarkus-agroal:${quarkusPlatformVersion}"
-//    api project(':mybatis')
 
     // maven provided
     compileOnly 'org.graalvm.nativeimage:svm:21.2.0'

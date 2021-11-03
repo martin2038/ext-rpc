@@ -1,7 +1,7 @@
 dependencies {
 //    implementation platform("io.quarkus:quarkus-bom:${quarkusPlatformVersion}")
     api "io.quarkus:quarkus-arc-deployment:${quarkusPlatformVersion}"
-    api "io.quarkus:quarkus-agroal-deployment:${quarkusPlatformVersion}"
+//    api "io.quarkus:quarkus-agroal-deployment:${quarkusPlatformVersion}"
     api project(':ext-rpc')
 
     api 'com.bt.rpc:rpc-api:1.0.0'
