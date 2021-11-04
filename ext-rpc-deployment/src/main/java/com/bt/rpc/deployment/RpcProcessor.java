@@ -82,7 +82,7 @@ public class RpcProcessor {
                 if(serverExists) {
                     m.annotations().forEach(it -> annoSet.add(it.name()));
                 }
-                
+
                 recursionParameterizedType(thisSet,m.returnType());
                 m.parameters().forEach(it->recursionParameterizedType(thisSet,it));
                 //addRefDtoClass(dtoSet, thisSet);
