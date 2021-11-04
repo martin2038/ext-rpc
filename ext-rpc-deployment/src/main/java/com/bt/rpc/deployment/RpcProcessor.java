@@ -78,7 +78,11 @@ public class RpcProcessor {
             var methods = cls.methods();
             var thisSet = new HashSet<DotName>();
             for (var m : methods){
-                m.annotations().forEach(it->annoSet.add(it.name()));
+
+                if(serverExists) {
+                    m.annotations().forEach(it -> annoSet.add(it.name()));
+                }
+                
                 recursionParameterizedType(thisSet,m.returnType());
                 m.parameters().forEach(it->recursionParameterizedType(thisSet,it));
                 //addRefDtoClass(dtoSet, thisSet);
