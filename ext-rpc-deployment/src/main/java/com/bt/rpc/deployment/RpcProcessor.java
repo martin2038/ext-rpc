@@ -1,9 +1,9 @@
 package com.bt.rpc.deployment;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.bt.rpc.annotation.Doc;
 import com.bt.rpc.annotation.RpcService;
 import com.bt.rpc.model.RpcResult;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -13,6 +13,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageProxyDefinitionBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Type;
 import org.jboss.jandex.Type.Kind;
@@ -22,9 +23,13 @@ public class RpcProcessor {
 
     private static final Logger LOG = Logger.getLogger(RpcProcessor.class);
     private static final String  FEATURE     = "ext-rpc";
+
+
     private static final DotName RPC_SERVICE = DotName.createSimple(RpcService.class.getName());
 
     private static final DotName RPC_RESULT = DotName.createSimple(RpcResult.class.getName());
+
+    private static final DotName DOC_ANNO = DotName.createSimple(Doc.class.getName());
 
     @BuildStep
     FeatureBuildItem feature() {
@@ -43,7 +48,20 @@ public class RpcProcessor {
         boolean clientExists =  checkExists("com.bt.rpc.client.ClientContext");
         boolean serverExists =  checkExists("com.bt.rpc.server.ServerContext");
 
-        var reflectiveSet = new HashSet<DotName>();
+        var dtoSet = new HashSet<String>();
+        var annoSet = new HashSet<DotName>();
+
+        if(serverExists) {
+            annoSet.add(DOC_ANNO);
+            reflective.produce(new ReflectiveClassBuildItem(true, false, DOC_ANNO.toString()));
+            for (AnnotationInstance i : indexBuildItem.getIndex().getAnnotations(DOC_ANNO)) {
+                if (i.target().kind() == AnnotationTarget.Kind.FIELD) {
+                    i.target().asField().annotations()
+                            .stream().map(AnnotationInstance::name)
+                            .forEach(annoSet::add);
+                }
+            }
+        }
 
         for (AnnotationInstance i : indexBuildItem.getIndex().getAnnotations(RPC_SERVICE)) {
             var cls = i.target().asClass();
@@ -60,16 +78,34 @@ public class RpcProcessor {
             var methods = cls.methods();
             var thisSet = new HashSet<DotName>();
             for (var m : methods){
+                m.annotations().forEach(it->annoSet.add(it.name()));
                 recursionParameterizedType(thisSet,m.returnType());
                 m.parameters().forEach(it->recursionParameterizedType(thisSet,it));
-                addRefDtoClass(reflectiveSet, reflective, thisSet);
+                //addRefDtoClass(dtoSet, thisSet);
+
+                thisSet.stream().map(DotName::toString)
+                        .filter(c->! c.startsWith("java."))
+                        .forEach(dtoSet::add);
             }
         }
+
+        LOG.info("=== Annotation Reflective : " + annoSet.size());
+        if(annoSet.size()>0) {
+            reflective.produce(new ReflectiveClassBuildItem(true, false,
+                    annoSet.stream().map(DotName::toString).toArray(String[]::new)));
+            LOG.debug("=== Annotation Reflective :"+annoSet);
+        }
+
+        LOG.info("=== DTO Reflective : "+ dtoSet.size());
+        if(dtoSet.size() > 0) {
+            reflective.produce(new ReflectiveClassBuildItem(true, true, dtoSet.toArray(new String[0])));
+            LOG.debug("=== DTO Reflective :"+dtoSet);
+        }
+
 
     }
 
     static boolean checkExists(String client){
-
         try{
             Class.forName(client);
             return true;
@@ -94,13 +130,5 @@ public class RpcProcessor {
         }
     }
 
-    private static void addRefDtoClass(Set<DotName> set, BuildProducer<ReflectiveClassBuildItem> reflective, Collection<DotName> clz){
-        for(var c : clz){
-            if (set.add(c) && ! c.toString().startsWith("java.") ){
-                LOG.info("====== Reflective : "+ c);
-                reflective.produce(new ReflectiveClassBuildItem(true, true,  c.toString()));
-            }
-        }
-    }
 
 }
