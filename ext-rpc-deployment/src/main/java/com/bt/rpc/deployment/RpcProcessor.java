@@ -2,26 +2,21 @@ package com.bt.rpc.deployment;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.CDI;
 import javax.inject.Named;
 
 import com.bt.rpc.annotation.Doc;
 import com.bt.rpc.annotation.RpcService;
-import com.bt.rpc.client.CacheManager;
 import com.bt.rpc.client.RpcClientFactory;
 import com.bt.rpc.model.RpcResult;
 import com.bt.rpc.runtime.ClientConfig;
 import com.bt.rpc.runtime.RpcRecorder;
 import com.bt.rpc.runtime.ServerApp;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.BeanDestroyer;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -31,7 +26,6 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageProxyDefinitionBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
-import io.quarkus.runtime.RuntimeValue;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
@@ -65,7 +59,7 @@ public class RpcProcessor {
                            CombinedIndexBuildItem indexBuildItem) {
 
 
-        boolean clientExists = isClient();
+        boolean clientExists = new IsClient().getAsBoolean();
         boolean serverExists = isServer();
 
         var dtoSet = new HashSet<String>();
@@ -130,13 +124,21 @@ public class RpcProcessor {
     }
 
 
+    static class IsClient implements BooleanSupplier {
+
+        public boolean getAsBoolean() {
+            return checkExists("com.bt.rpc.client.ClientContext");
+        }
+    }
+
     @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    void generateClientFactorys(ClientConfig config,BuildProducer<RpcServiceMBI> clientServiceMBIS,
+    @BuildStep(onlyIf = IsClient.class)
+    void genRpcClientFactorys(ClientConfig config,BuildProducer<RpcServiceMBI> clientServiceMBIS,
                                     BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
                                 RpcRecorder recorder,CombinedIndexBuildItem indexBuildItem) throws  Exception {
 
-        if( !isClient() && config.apps.isEmpty()){
+        if( config.apps.isEmpty()){
+            LOG.info("==== SKip genRpcClientFactorys ..");
             return;
         }
 
@@ -198,14 +200,10 @@ public class RpcProcessor {
 
     //
     @Record(ExecutionTime.RUNTIME_INIT)
-    @BuildStep
+    @BuildStep(onlyIf = IsClient.class)
     void genRpcClients(RpcRecorder recorder,
                              List<RpcServiceMBI> serviceMBIS,
                              BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer) throws ClassNotFoundException {
-        if( !isClient() ||  serviceMBIS.isEmpty()){
-            return;
-        }
-
         for (RpcServiceMBI i : serviceMBIS) {
 
             SyntheticBeanBuildItem.ExtendedBeanConfigurator configurator = SyntheticBeanBuildItem
@@ -224,9 +222,7 @@ public class RpcProcessor {
     }
 
 
-    static boolean isClient() {
-        return  checkExists("com.bt.rpc.client.ClientContext");
-    }
+
 
     static boolean isServer() {
         return   checkExists("com.bt.rpc.server.ServerContext");
