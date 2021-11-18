@@ -1,17 +1,37 @@
 package com.bt.rpc.deployment;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.spi.CDI;
+import javax.inject.Named;
 
 import com.bt.rpc.annotation.Doc;
 import com.bt.rpc.annotation.RpcService;
+import com.bt.rpc.client.CacheManager;
+import com.bt.rpc.client.RpcClientFactory;
 import com.bt.rpc.model.RpcResult;
+import com.bt.rpc.runtime.ClientConfig;
+import com.bt.rpc.runtime.RpcRecorder;
+import com.bt.rpc.runtime.ServerApp;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.BeanDestroyer;
+import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageProxyDefinitionBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
+import io.quarkus.runtime.RuntimeValue;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
@@ -39,14 +59,14 @@ public class RpcProcessor {
 
 
     @BuildStep
-    void regRpcServiceForNative(//BuildProducer<MyBatisMapperBuildItem> mappers,
+    void regRpcServiceForNative(
                            BuildProducer<ReflectiveClassBuildItem> reflective,
                            BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
                            CombinedIndexBuildItem indexBuildItem) {
 
 
-        boolean clientExists =  checkExists("com.bt.rpc.client.ClientContext");
-        boolean serverExists =  checkExists("com.bt.rpc.server.ServerContext");
+        boolean clientExists = isClient();
+        boolean serverExists = isServer();
 
         var dtoSet = new HashSet<String>();
         var annoSet = new HashSet<DotName>();
@@ -107,6 +127,109 @@ public class RpcProcessor {
         }
 
 
+    }
+
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    void generateClientFactorys(ClientConfig config,BuildProducer<RpcServiceMBI> clientServiceMBIS,
+                                    BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
+                                RpcRecorder recorder,CombinedIndexBuildItem indexBuildItem) throws  Exception {
+
+        if( !isClient() && config.apps.isEmpty()){
+            return;
+        }
+
+        var services =  indexBuildItem.getIndex().getAnnotations(RPC_SERVICE)
+                    .stream().map(it-> {
+                    try {
+                        return Class.forName(it.target().asClass().name().toString());
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).collect(Collectors.toSet());
+
+
+        for (Entry<String, ServerApp> entry : config.apps.entrySet()) {
+            String app = entry.getKey();
+            ServerApp host = entry.getValue();
+
+            var matched = services.stream().filter(it->host.isMatch(it.getName())).collect(Collectors.toList());
+
+            if(matched.isEmpty()){
+                LOG.info("=== Ignore Empty Service Found for : "+ host);
+                continue;
+            }
+
+            matched.forEach(s->{
+                clientServiceMBIS.produce(new RpcServiceMBI(s,app));
+                LOG.info("=== Mapping : " + s  +" -> " +app);
+            });
+
+
+            var channelRuntime = recorder.createManagedChannel(host.url);
+
+            SyntheticBeanBuildItem.ExtendedBeanConfigurator configurator = SyntheticBeanBuildItem
+                    .configure(RpcClientFactory.class)
+                    .scope(ApplicationScoped.class)
+                    .unremovable()
+                    //.destroyer(ClientDestory.class)
+                    .supplier(recorder.clientFactorySupplier(recorder.createClientFactory(channelRuntime,app)));
+
+            configurator.defaultBean();
+            configurator.addQualifier().annotation(Named.class).addValue("value", app).done();
+
+
+            LOG.info("=== STATIC_INIT RpcClientFactory :"+host.url+"/"+app);
+            syntheticBeanBuildItemBuildProducer.produce(configurator.done());
+        }
+    }
+
+    //static class ClientDestory implements BeanDestroyer<RpcClientFactory> {
+    //
+    //    @Override
+    //    public void destroy(RpcClientFactory instance, CreationalContext creationalContext, Map params) {
+    //        LOG.info("=== close : "+ instance);
+    //        if(null != instance){
+    //            instance.close();
+    //        }
+    //    }
+    //}
+
+    //
+    @Record(ExecutionTime.RUNTIME_INIT)
+    @BuildStep
+    void genRpcClients(RpcRecorder recorder,
+                             List<RpcServiceMBI> serviceMBIS,
+                             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer) throws ClassNotFoundException {
+        if( !isClient() ||  serviceMBIS.isEmpty()){
+            return;
+        }
+
+        for (RpcServiceMBI i : serviceMBIS) {
+
+            SyntheticBeanBuildItem.ExtendedBeanConfigurator configurator = SyntheticBeanBuildItem
+                    .configure(i.getName())
+                    .scope(ApplicationScoped.class)//.scope(Singleton.class)
+                    .setRuntimeInit()
+                    .unremovable()
+                    .supplier(recorder.rpcClientSupplier( i.getName(), i.getApp()));
+            configurator.defaultBean();
+            configurator.addQualifier().annotation(Named.class).addValue("value", i.getApp()).done();
+
+            LOG.info("=== RUNTIME_INIT CDI RpcService : " +i.getName() +" -> " + i.getApp());
+            syntheticBeanBuildItemBuildProducer.produce(configurator.done());
+        }
+
+    }
+
+
+    static boolean isClient() {
+        return  checkExists("com.bt.rpc.client.ClientContext");
+    }
+
+    static boolean isServer() {
+        return   checkExists("com.bt.rpc.server.ServerContext");
     }
 
     static boolean checkExists(String client){

@@ -14,7 +14,8 @@ dependencies {
 
     // maven provided
     compileOnly 'org.graalvm.nativeimage:svm:21.2.0'
-//    compileOnly 'org.graalvm.compiler:compiler:21.2.0'
+
+    implementation 'com.bt.rpc:rpc-client:1.0.0'
 
     annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusPlatformVersion}")
 }

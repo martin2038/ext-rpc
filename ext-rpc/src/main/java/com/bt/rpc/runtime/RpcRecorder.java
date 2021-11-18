@@ -1,11 +1,25 @@
 package com.bt.rpc.runtime;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.List;
+import java.net.URL;
 import java.util.function.Supplier;
 
-import com.bt.rpc.runtime.bridge.RPcClientFactory;
+import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.util.AnnotationLiteral;
+import javax.inject.Named;
+import javax.validation.Validator;
+
+import com.bt.rpc.client.CacheManager;
+import com.bt.rpc.client.RpcClientFactory;
+import com.bt.rpc.client.SimpleLRUCache;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import org.jboss.logging.Logger;
@@ -15,26 +29,55 @@ public class RpcRecorder {
     private static final Logger LOG = Logger.getLogger(RpcRecorder.class);
 
 
-    public RuntimeValue<Object> createProxyFactory(RPcClientFactory factory, List<String> mapperXml) throws IOException, URISyntaxException {
-        return new RuntimeValue<>(null);
+    public RuntimeValue<ManagedChannel> createManagedChannel(String urlString) throws MalformedURLException {
+        var url = new URL(urlString);
+        var channelBuilder =
+                ManagedChannelBuilder.forAddress(url.getHost(), url.getPort()<0?url.getDefaultPort() : url.getPort());
+        if ("https".equals(url.getProtocol())) {
+            channelBuilder.useTransportSecurity();
+        } else {
+            channelBuilder.usePlaintext();
+        }
+        var channel = channelBuilder.build();
+        return new RuntimeValue<>(channel);
+    }
+
+    public RuntimeValue<RpcClientFactory> createClientFactory(RuntimeValue<ManagedChannel> channelRuntimeValue,
+                                                              //RuntimeValue<CacheManager> cacheManagerRuntimeValue,
+                                                          String appName){
+        return new RuntimeValue<>(new RpcClientFactory(appName,channelRuntimeValue.getValue()));
     }
 
 
+    public Supplier<RpcClientFactory> clientFactorySupplier(RuntimeValue<RpcClientFactory> rpcClientFactoryRuntimeValue) {
+        return ()->{
 
-    public Supplier<Object> rpcClientSupplier(String name, RuntimeValue<Object> sqlSessionManager) {
-        return () -> {
-            try {
-                //var mapper =  sqlSessionManager.getValue().getMapper(Resources.classForName(name));
-                //LOG.info("MyBatisMapperSupplier :: " + name  +" -> "+ mapper);
-                return  null;
-            } catch (Exception e) {
-                e.printStackTrace();
-                LOG.info("Create MapperError :: " + name ,e);
-                return null;
+            var fac =  rpcClientFactoryRuntimeValue.getValue();
+            var beans =  Arc.container().select(CacheManager.class);
+            if(beans.isResolvable()){
+                LOG.info("Found  CacheManager in clientFactorySupplier :  {}" + beans.get());
+                fac.setCacheManager(beans.get());
+            }else {
+                fac.setCacheManager(new SimpleLRUCache());
             }
+            return fac;
         };
     }
 
+
+    public Supplier<Object> rpcClientSupplier(Class rpcService, String app) {
+        return () -> {
+                for (InstanceHandle<RpcClientFactory> hander : Arc.container().select(RpcClientFactory.class).handles()) {
+                    for (var anno : hander.getBean().getQualifiers()) {
+                        if (anno.annotationType() == Named.class && app.equals(((Named) anno).value())) {
+                            return hander.get().get(rpcService);
+                        }
+                    }
+                }
+                LOG.warn("Error Found rpcService  " + rpcService  +" in app : " + app);
+                return null;
+        };
+    }
 
 }
     //
