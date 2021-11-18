@@ -16,6 +16,8 @@ import javax.validation.Validator;
 import com.bt.rpc.client.CacheManager;
 import com.bt.rpc.client.RpcClientFactory;
 import com.bt.rpc.client.SimpleLRUCache;
+import com.bt.rpc.runtime.bridge.FacConfigImpl;
+import com.bt.rpc.runtime.bridge.FactoryConfig;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.quarkus.arc.Arc;
@@ -29,30 +31,33 @@ public class RpcRecorder {
     private static final Logger LOG = Logger.getLogger(RpcRecorder.class);
 
 
-    public RuntimeValue<ManagedChannel> createManagedChannel(String urlString) throws MalformedURLException {
+    public RuntimeValue<FactoryConfig> createManagedChannel(String urlString) throws MalformedURLException {
         var url = new URL(urlString);
-        var channelBuilder =
-                ManagedChannelBuilder.forAddress(url.getHost(), url.getPort()<0?url.getDefaultPort() : url.getPort());
-        if ("https".equals(url.getProtocol())) {
-            channelBuilder.useTransportSecurity();
-        } else {
-            channelBuilder.usePlaintext();
-        }
-        var channel = channelBuilder.build();
-        return new RuntimeValue<>(channel);
+        return new RuntimeValue<>(new FacConfigImpl(url.getHost(),url.getPort()<0?url.getDefaultPort() : url.getPort(),
+                "https".equals(url.getProtocol())));
     }
+    //
+    //public RuntimeValue<RpcClientFactory> createClientFactory(RuntimeValue<ManagedChannelBuilder> channelRuntimeValue,
+    //                                                          //RuntimeValue<CacheManager> cacheManagerRuntimeValue,
+    //                                                      String appName){
+    //    return new RuntimeValue<>();
+    //}
 
-    public RuntimeValue<RpcClientFactory> createClientFactory(RuntimeValue<ManagedChannel> channelRuntimeValue,
-                                                              //RuntimeValue<CacheManager> cacheManagerRuntimeValue,
-                                                          String appName){
-        return new RuntimeValue<>(new RpcClientFactory(appName,channelRuntimeValue.getValue()));
-    }
 
-
-    public Supplier<RpcClientFactory> clientFactorySupplier(RuntimeValue<RpcClientFactory> rpcClientFactoryRuntimeValue) {
+    public Supplier<RpcClientFactory> clientFactorySupplier(RuntimeValue<FactoryConfig> factoryConfigRuntimeValue,
+                                                            String appName) {
         return ()->{
+            var conf = factoryConfigRuntimeValue.getValue();
 
-            var fac =  rpcClientFactoryRuntimeValue.getValue();
+            var channelBuilder =
+                    ManagedChannelBuilder.forAddress(conf.getHost(), conf.getPort());
+            if (conf.isTls()) {
+                channelBuilder.useTransportSecurity();
+            } else {
+                channelBuilder.usePlaintext();
+            }
+
+            var fac =  new RpcClientFactory(appName,channelBuilder.build());
             var beans =  Arc.container().select(CacheManager.class);
             if(beans.isResolvable()){
                 LOG.info("Found  CacheManager in clientFactorySupplier :  {}" + beans.get());

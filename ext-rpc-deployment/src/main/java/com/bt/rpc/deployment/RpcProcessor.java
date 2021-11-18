@@ -174,13 +174,13 @@ public class RpcProcessor {
                     .scope(ApplicationScoped.class)
                     .unremovable()
                     //.destroyer(ClientDestory.class)
-                    .supplier(recorder.clientFactorySupplier(recorder.createClientFactory(channelRuntime,app)));
+                    .supplier(recorder.clientFactorySupplier(channelRuntime,app));
 
             configurator.defaultBean();
             configurator.addQualifier().annotation(Named.class).addValue("value", app).done();
 
 
-            LOG.info("=== STATIC_INIT RpcClientFactory :"+host.url+"/"+app);
+            LOG.info("=== STATIC_INIT CDI RpcClientFactory :"+host.url+"/"+app);
             syntheticBeanBuildItemBuildProducer.produce(configurator.done());
         }
     }
