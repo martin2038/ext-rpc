@@ -7,9 +7,7 @@ package com.bt.rpc.deployment;
 import java.util.List;
 import java.util.Map;
 
-import com.bt.rpc.client.CacheManager;
 import com.bt.rpc.client.RpcClientFactory;
-import io.grpc.ManagedChannel;
 import io.quarkus.builder.item.MultiBuildItem;
 import io.quarkus.runtime.RuntimeValue;
 
