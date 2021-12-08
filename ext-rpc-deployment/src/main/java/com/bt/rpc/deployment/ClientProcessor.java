@@ -84,7 +84,7 @@ public interface ClientProcessor {
             configurator.addQualifier().annotation(Named.class).addValue("value", app).done();
 
 
-            LOG.info("=== Set RpcClientFactory [ "+ matched.size() + " Inject ("+host.url+"/"+app + ") ] :"
+            LOG.info("=== Set RpcClientFactory [ "+ matched.size() + " -> "+host.url+"/"+app + " ] : "
                     + matched.stream().map(Class::getSimpleName).collect(Collectors.joining(",")));
             syntheticBeanBuildItemBuildProducer.produce(configurator.done());
         }
