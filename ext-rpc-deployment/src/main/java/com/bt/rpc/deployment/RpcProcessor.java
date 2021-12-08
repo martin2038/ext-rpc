@@ -50,11 +50,10 @@ public class RpcProcessor {
     @BuildStep
     void regRpcServiceForNative(
                            BuildProducer<ReflectiveClassBuildItem> reflective,
-                           //BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
+                           BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
                            CombinedIndexBuildItem indexBuildItem) {
 
 
-        //boolean clientExists = new IsClient().getAsBoolean();
         boolean serverExists = isServer();
 
         var dtoSet = new HashSet<String>();
@@ -73,18 +72,19 @@ public class RpcProcessor {
         }
 
         //var clientProxy = new StringBuilder(100);
-        var serverList = new ArrayList<String>();
+        var serverList = new ArrayList<DotName>();
         for (AnnotationInstance i : indexBuildItem.getIndex().getAnnotations(RPC_SERVICE)) {
             var cls = i.target().asClass();
-            var dotName = cls.name().toString();
+            //var dotName = cls.name().toString();
+            serverList.add( cls.name());
             //if(clientExists){
             //    proxy.produce(new NativeImageProxyDefinitionBuildItem(dotName));
             //    clientProxy.append(cls.name().withoutPackagePrefix()).append(',');
             //}
-            if(serverExists){
-                reflective.produce(new ReflectiveClassBuildItem(true, false, dotName));
-                serverList.add(cls.name().withoutPackagePrefix());
-            }
+            //if(serverExists){
+            //    reflective.produce(new ReflectiveClassBuildItem(true, false, dotName));
+            //
+            //}
 
             var methods = cls.methods();
             var thisSet = new HashSet<DotName>();
@@ -108,7 +108,18 @@ public class RpcProcessor {
         //    LOG.info("=== For ClientProxy  : " + clientProxy);
         //}
         if( serverList.size() > 0){
-            LOG.info("=== [ "+ serverList.size() +" ServerReflective ]  : " + String.join(",",serverList));
+            var array = serverList.stream().map(DotName::toString).toArray(String[]::new);
+            var suff = "";
+            if(serverExists){
+                reflective.produce(new ReflectiveClassBuildItem(true, false, array));
+            }
+            boolean clientExists = new IsClient().getAsBoolean();
+            if(clientExists){
+                proxy.produce(new NativeImageProxyDefinitionBuildItem(array));
+                suff = " & Client";
+            }
+            LOG.info("=== [ "+ serverList.size() +" RpcService"+suff+" ]  : " +
+                    serverList.stream().map(DotName::withoutPackagePrefix).collect(Collectors.joining(",")));
         }
 
         LOG.info("=== [ "+annotationSetForMetaData.size()+" Annotation ] For MetaDataService : " +
@@ -142,9 +153,9 @@ public class RpcProcessor {
     @BuildStep(onlyIf = IsClient.class)
     void genRpcClientFactorys(ClientConfig config, BuildProducer<RpcServiceMBI> clientServiceMBIS,
                               BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
-                              BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
+                              //BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
                               ClientRecorder recorder, CombinedIndexBuildItem indexBuildItem) throws  Exception {
-        ClientProcessor.genRpcClientFactorys(config, clientServiceMBIS, syntheticBeanBuildItemBuildProducer,proxy, recorder, indexBuildItem);
+        ClientProcessor.genRpcClientFactorys(config, clientServiceMBIS, syntheticBeanBuildItemBuildProducer, recorder, indexBuildItem);
     }
 
 

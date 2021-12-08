@@ -35,7 +35,7 @@ public interface ClientProcessor {
 
     static void genRpcClientFactorys(ClientConfig config, BuildProducer<RpcServiceMBI> clientServiceMBIS,
                                       BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
-                                     BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
+                                     //BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
                                       ClientRecorder recorder, CombinedIndexBuildItem indexBuildItem) throws MalformedURLException {
 
         if( config.apps.isEmpty()){
@@ -53,7 +53,7 @@ public interface ClientProcessor {
                 }).collect(Collectors.toSet());
 
 
-        var proxySet = new HashSet<Class>();
+        //var proxySet = new HashSet<Class>();
         for (Entry<String, ServerApp> entry : config.apps.entrySet()) {
             String app = entry.getKey();
             ServerApp host = entry.getValue();
@@ -67,7 +67,7 @@ public interface ClientProcessor {
 
             matched.forEach(s->{
                 clientServiceMBIS.produce(new RpcServiceMBI(s,app));
-                proxySet.add(s);
+                //proxySet.add(s);
             });
 
 
@@ -89,12 +89,12 @@ public interface ClientProcessor {
             syntheticBeanBuildItemBuildProducer.produce(configurator.done());
         }
 
-        if(proxySet.size()>0){
-            var list = proxySet.stream().map(Class::getName).collect(Collectors.toList());
-            proxy.produce(new NativeImageProxyDefinitionBuildItem(list));
-            LOG.info("=== [ "+ proxySet.size() +" ClientProxy ] : " + proxySet.stream()
-                    .map(Class::getSimpleName).collect(Collectors.joining(",")));
-        }
+        //if(proxySet.size()>0){
+        //    var list = proxySet.stream().map(Class::getName).collect(Collectors.toList());
+        //    proxy.produce(new NativeImageProxyDefinitionBuildItem(list));
+        //    LOG.info("=== [ "+ proxySet.size() +" ClientProxy ] : " + proxySet.stream()
+        //            .map(Class::getSimpleName).collect(Collectors.joining(",")));
+        //}
 
     }
 
