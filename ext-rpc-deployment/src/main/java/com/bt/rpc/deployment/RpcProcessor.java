@@ -1,5 +1,6 @@
 package com.bt.rpc.deployment;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -137,11 +138,63 @@ public class RpcProcessor {
         );
         if(dtoSet.size() > 0) {
             reflective.produce(new ReflectiveClassBuildItem(true, true, dtoSet.toArray(new String[0])));
+
+            var childSet = recursionNestDtoType(dtoSet);
+            if(childSet.size()>0){
+                var grandChild = recursionNestDtoType(childSet);
+                childSet.addAll(grandChild);
+                reflective.produce(new ReflectiveClassBuildItem(true, true, childSet.toArray(new String[0])));
+                LOG.info("=== [ "+childSet.size()+" Nest DTO ] For Jackson : "+ childSet.stream()
+                        .map(name->name.substring(name.lastIndexOf('.')+1))
+                        .collect(Collectors.joining(","))
+                );
+            }
         }
 
 
     }
 
+    static Set<String> recursionNestDtoType(Set<String> from){
+        var childSet = new HashSet<String>();
+        for(var dtoName : from){
+
+            try {
+                var clz = Class.forName(dtoName);
+                for(var f : clz.getDeclaredFields()){
+
+
+
+                    var type = f.getGenericType();
+
+                    recursionNestDtoType(childSet,from,type);
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        return childSet;
+    }
+
+    static void recursionNestDtoType(Set<String> total,Set<String> from,java.lang.reflect.Type type) {
+        if(type instanceof Class ){
+            var fClz = ((Class<?>) type);
+            var fName = fClz.getName();
+            // skip Array , use list
+            if(!fClz.isPrimitive()
+                    && ! fClz.isArray()
+                    && ! fClz.isEnum()
+                    && !fName.startsWith("java.")
+                    && !from.contains(fName)){
+                total.add(fName);
+            }
+        } else if(type instanceof ParameterizedType) {
+            var pt = (ParameterizedType)type;
+            recursionNestDtoType(total,from,pt.getRawType());
+            for (var t : pt.getActualTypeArguments()){
+                recursionNestDtoType(total,from,t);
+            }
+        }
+    }
 
     static class IsClient implements BooleanSupplier {
 
