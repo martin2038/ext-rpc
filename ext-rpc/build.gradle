@@ -12,8 +12,8 @@ dependencies {
     api "io.quarkus:quarkus-arc:${quarkusPlatformVersion}"
 
     // maven provided
-//    compileOnly 'org.graalvm.nativeimage:svm:21.2.0'
-    compileOnly 'org.graalvm.nativeimage:svm:21.3.0'
+//    compileOnly 'org.graalvm.nativeimage:svm:21.3.0'
+    compileOnly 'org.graalvm.nativeimage:svm:21.2.0'
 
     implementation 'com.bt.rpc:rpc-client:1.0.0'
 

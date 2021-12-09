@@ -72,15 +72,16 @@ public class RpcProcessor {
         }
 
         //var clientProxy = new StringBuilder(100);
+        boolean clientExists = new IsClient().getAsBoolean();
         var serverList = new ArrayList<DotName>();
         for (AnnotationInstance i : indexBuildItem.getIndex().getAnnotations(RPC_SERVICE)) {
             var cls = i.target().asClass();
             //var dotName = cls.name().toString();
             serverList.add( cls.name());
-            //if(clientExists){
-            //    proxy.produce(new NativeImageProxyDefinitionBuildItem(dotName));
-            //    clientProxy.append(cls.name().withoutPackagePrefix()).append(',');
-            //}
+            if(clientExists){
+                proxy.produce(new NativeImageProxyDefinitionBuildItem(cls.name().toString()));
+                //clientProxy.append(cls.name().withoutPackagePrefix()).append(',');
+            }
             //if(serverExists){
             //    reflective.produce(new ReflectiveClassBuildItem(true, false, dotName));
             //
@@ -113,10 +114,10 @@ public class RpcProcessor {
             if(serverExists){
                 reflective.produce(new ReflectiveClassBuildItem(true, false, array));
             }
-            boolean clientExists = new IsClient().getAsBoolean();
+
             if(clientExists){
-                proxy.produce(new NativeImageProxyDefinitionBuildItem(array));
-                suff = " & Client";
+                //proxy.produce(new NativeImageProxyDefinitionBuildItem(array));
+                suff = " & Clients ";
             }
             LOG.info("=== [ "+ serverList.size() +" RpcService"+suff+" ]  : " +
                     serverList.stream().map(DotName::withoutPackagePrefix).collect(Collectors.joining(",")));
