@@ -154,20 +154,17 @@ public class RpcProcessor {
 
     }
 
-    static Set<String> recursionNestDtoType(Set<String> from){
+    static Set<String> recursionNestDtoType(Set<String> total){
         var childSet = new HashSet<String>();
-        for(var dtoName : from){
+        for(var dtoName : total){
 
             try {
-                var clz = Class.forName(dtoName);
-                for(var f : clz.getDeclaredFields()){
-
-
-
-                    var type = f.getGenericType();
-
-                    recursionNestDtoType(childSet,from,type);
-                }
+                var base = Class.forName(dtoName);
+                do {
+                    extractSuper(childSet,total , base);
+                    base = base.getSuperclass();
+                    recursionNestDtoType( childSet,total,base);
+                }while (base != Object.class);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -175,7 +172,14 @@ public class RpcProcessor {
         return childSet;
     }
 
-    static void recursionNestDtoType(Set<String> total,Set<String> from,java.lang.reflect.Type type) {
+    private static void extractSuper( HashSet<String> childSet,Set<String> total, Class clz)  {
+        for(var f : clz.getDeclaredFields()){
+            var type = f.getGenericType();
+            recursionNestDtoType(childSet, total,type);
+        }
+    }
+
+    static void recursionNestDtoType(HashSet<String> childSet,Set<String> total,java.lang.reflect.Type type) {
         if(type instanceof Class ){
             var fClz = ((Class<?>) type);
             var fName = fClz.getName();
@@ -184,14 +188,14 @@ public class RpcProcessor {
                     && ! fClz.isArray()
                     && ! fClz.isEnum()
                     && !fName.startsWith("java.")
-                    && !from.contains(fName)){
-                total.add(fName);
+                    && !total.contains(fName)){
+                childSet.add(fName);
             }
         } else if(type instanceof ParameterizedType) {
             var pt = (ParameterizedType)type;
-            recursionNestDtoType(total,from,pt.getRawType());
+            recursionNestDtoType(childSet,total,pt.getRawType());
             for (var t : pt.getActualTypeArguments()){
-                recursionNestDtoType(total,from,t);
+                recursionNestDtoType(childSet,total,t);
             }
         }
     }
