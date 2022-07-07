@@ -49,14 +49,12 @@ public class RpcProcessor {
 
 
     @BuildStep
-    void regRpcServiceForNative(
-                           BuildProducer<ReflectiveClassBuildItem> reflective,
+    void regRpcServiceForNative(ClientConfig config,
+                                BuildProducer<ReflectiveClassBuildItem> reflective,
                            BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
                            CombinedIndexBuildItem indexBuildItem) {
 
-
         boolean serverExists = isServer();
-
         var dtoSet = new HashSet<String>();
         var annotationSetForMetaData = new HashSet<DotName>();
 
@@ -72,30 +70,18 @@ public class RpcProcessor {
             }
         }
 
-        //var clientProxy = new StringBuilder(100);
-        boolean clientExists = new IsClient().getAsBoolean();
         var serverList = new ArrayList<DotName>();
         for (AnnotationInstance i : indexBuildItem.getIndex().getAnnotations(RPC_SERVICE)) {
             var cls = i.target().asClass();
             //var dotName = cls.name().toString();
             serverList.add( cls.name());
-            if(clientExists){
-                proxy.produce(new NativeImageProxyDefinitionBuildItem(cls.name().toString()));
-                //clientProxy.append(cls.name().withoutPackagePrefix()).append(',');
-            }
-            //if(serverExists){
-            //    reflective.produce(new ReflectiveClassBuildItem(true, false, dotName));
-            //
-            //}
 
             var methods = cls.methods();
             var thisSet = new HashSet<DotName>();
             for (var m : methods){
-
                 if(serverExists) {
                     m.annotations().forEach(it -> annotationSetForMetaData.add(it.name()));
                 }
-
                 recursionParameterizedType(thisSet,m.returnType());
                 m.parameters().forEach(it->recursionParameterizedType(thisSet,it));
                 //addRefDtoClass(dtoSet, thisSet);
@@ -106,22 +92,40 @@ public class RpcProcessor {
             }
         }
 
-        //if( clientProxy.length() > 0){
-        //    LOG.info("=== For ClientProxy  : " + clientProxy);
-        //}
+
         if( serverList.size() > 0){
-            var array = serverList.stream().map(DotName::toString).toArray(String[]::new);
-            var suff = "";
-            if(serverExists){
-                reflective.produce(new ReflectiveClassBuildItem(true, false, array));
+            var clientClsList = new ArrayList<DotName>();
+            boolean clientExists = new IsClient().getAsBoolean();
+            if(clientExists && config !=null && config.apps != null &&  config.apps.size() > 0){
+                config.apps.values().forEach(host->
+                    serverList.forEach(s -> {
+                        var clz = s.toString();
+                        if (host.isMatch(clz)) {
+                            clientClsList.add(s);
+                            // 貌似代理批量执行有bug
+                            // UnsupportedFeatureError: Proxy class defined by interfaces [interface CaptchaService] not found.
+                            // Generating proxy classes at runtime is not supported.
+                            proxy.produce(new NativeImageProxyDefinitionBuildItem(clz));
+                        }
+                    })
+                );
             }
 
-            if(clientExists){
-                //proxy.produce(new NativeImageProxyDefinitionBuildItem(array));
-                suff = " & Clients ";
+            if(clientClsList.size()>0){
+                LOG.info("=== [ "+ clientClsList.size() +" RpcClient  ]  : " +
+                        clientClsList.stream().map(DotName::withoutPackagePrefix).collect(Collectors.joining(",")));
+
+                // 默认client和server不共存
+                serverList.removeAll(clientClsList);
             }
-            LOG.info("=== [ "+ serverList.size() +" RpcService"+suff+" ]  : " +
-                    serverList.stream().map(DotName::withoutPackagePrefix).collect(Collectors.joining(",")));
+
+            if(serverExists && serverList.size()>0){
+                var array = serverList.stream().map(DotName::toString).toArray(String[]::new);
+                reflective.produce(new ReflectiveClassBuildItem(true, false, array));
+                LOG.info("=== [ "+ serverList.size() +" RpcService  ]  : " +
+                        serverList.stream().map(DotName::withoutPackagePrefix).collect(Collectors.joining(",")));
+            }
+
         }
 
         LOG.info("=== [ "+annotationSetForMetaData.size()+" Annotation ] For MetaDataService : " +
