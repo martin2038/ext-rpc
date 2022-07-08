@@ -177,6 +177,10 @@ public class RpcProcessor {
     }
 
     private static void extractSuper( HashSet<String> childSet,Set<String> total, Class clz)  {
+        //if(null == clz){
+        //    LOG.debug("skip null clz");
+        //    return;
+        //}
         for(var f : clz.getDeclaredFields()){
             var type = f.getGenericType();
             recursionNestDtoType(childSet, total,type);
@@ -191,6 +195,7 @@ public class RpcProcessor {
             if(!fClz.isPrimitive()
                     && ! fClz.isArray()
                     && ! fClz.isEnum()
+                    && ! fClz.isInterface()
                     && !fName.startsWith("java.")
                     && !total.contains(fName)){
                 childSet.add(fName);
@@ -206,6 +211,7 @@ public class RpcProcessor {
 
     static class IsClient implements BooleanSupplier {
 
+        @Override
         public boolean getAsBoolean() {
             return checkExists("com.bt.rpc.client.ClientContext");
         }
