@@ -9,13 +9,15 @@ quarkusExtension {
 dependencies {
 //    implementation platform("io.quarkus:quarkus-bom:${quarkusPlatformVersion}")
 
-    api "io.quarkus:quarkus-arc:${quarkusPlatformVersion}"
+//    api "io.quarkus:quarkus-arc:${quarkusVersion}"
+    compileOnly "io.quarkus:quarkus-arc:${quarkusVersion}"
 
     // maven provided
 //    compileOnly 'org.graalvm.nativeimage:svm:21.3.0'
-    compileOnly 'org.graalvm.nativeimage:svm:21.2.0'
+//    compileOnly 'org.graalvm.nativeimage:svm:21.2.0'
+    compileOnly "org.graalvm.nativeimage:svm:$graalSdkVersion"
 
     implementation 'com.bt.rpc:rpc-client:1.0.0'
 
-    annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusPlatformVersion}")
+    annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusVersion}")
 }
