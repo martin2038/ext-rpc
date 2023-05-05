@@ -60,7 +60,9 @@ public class RpcProcessor {
 
         if(serverExists) {
             annotationSetForMetaData.add(DOC_ANNO);
-            reflective.produce(new ReflectiveClassBuildItem(true, false, DOC_ANNO.toString()));
+            var refInfo = ReflectiveClassBuildItem.builder(DOC_ANNO.toString()).methods(true).fields(false).build();
+            //new ReflectiveClassBuildItem(true, false, DOC_ANNO.toString())
+            reflective.produce(refInfo);
             for (AnnotationInstance i : indexBuildItem.getIndex().getAnnotations(DOC_ANNO)) {
                 if (i.target().kind() == AnnotationTarget.Kind.FIELD) {
                     i.target().asField().annotations()
@@ -83,7 +85,7 @@ public class RpcProcessor {
                     m.annotations().forEach(it -> annotationSetForMetaData.add(it.name()));
                 }
                 recursionParameterizedType(thisSet,m.returnType());
-                m.parameters().forEach(it->recursionParameterizedType(thisSet,it));
+                m.parameters().forEach(it->recursionParameterizedType(thisSet,it.type()));
                 //addRefDtoClass(dtoSet, thisSet);
 
                 thisSet.stream().map(DotName::toString)
@@ -121,7 +123,9 @@ public class RpcProcessor {
 
             if(serverExists && serverList.size()>0){
                 var array = serverList.stream().map(DotName::toString).toArray(String[]::new);
-                reflective.produce(new ReflectiveClassBuildItem(true, false, array));
+                var refInfo = ReflectiveClassBuildItem.builder(array).methods(true).fields(false).build();
+                //new ReflectiveClassBuildItem(true, false, array)
+                reflective.produce(refInfo);
                 LOG.info("=== [ "+ serverList.size() +" RpcService  ]  : " +
                         serverList.stream().map(DotName::withoutPackagePrefix).collect(Collectors.joining(",")));
             }
@@ -132,8 +136,11 @@ public class RpcProcessor {
                 annotationSetForMetaData.stream().map(DotName::withoutPackagePrefix).collect(Collectors.joining(","))
         );
         if(annotationSetForMetaData.size()>0) {
-            reflective.produce(new ReflectiveClassBuildItem(true, false,
-                    annotationSetForMetaData.stream().map(DotName::toString).toArray(String[]::new)));
+            var refInfo = ReflectiveClassBuildItem
+                    .builder(annotationSetForMetaData.stream().map(DotName::toString).toArray(String[]::new))
+                    .methods(true)
+                    .fields(false).build();
+            reflective.produce(refInfo);
         }
 
         LOG.info("=== [ "+dtoSet.size()+" DTO ] For Jackson : "+ dtoSet.stream()
@@ -141,13 +148,15 @@ public class RpcProcessor {
                 .collect(Collectors.joining(","))
         );
         if(dtoSet.size() > 0) {
-            reflective.produce(new ReflectiveClassBuildItem(true, true, dtoSet.toArray(new String[0])));
+            var refInfo = ReflectiveClassBuildItem.builder(dtoSet.toArray(new String[0])).methods(true).fields(true).build();
+            reflective.produce(refInfo);
 
             var childSet = recursionNestDtoType(dtoSet);
             if(childSet.size()>0){
                 var grandChild = recursionNestDtoType(childSet);
                 childSet.addAll(grandChild);
-                reflective.produce(new ReflectiveClassBuildItem(true, true, childSet.toArray(new String[0])));
+                var childInfo = ReflectiveClassBuildItem.builder(childSet.toArray(new String[0])).methods(true).fields(true).build();
+                reflective.produce(childInfo);
                 LOG.info("=== [ "+childSet.size()+" Nest DTO ] For Jackson : "+ childSet.stream()
                         .map(name->name.substring(name.lastIndexOf('.')+1))
                         .collect(Collectors.joining(","))

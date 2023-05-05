@@ -5,10 +5,8 @@ dependencies {
 //    api "io.quarkus:quarkus-agroal-deployment:${quarkusPlatformVersion}"
     api project(':ext-rpc')
 
-    api 'com.bt.rpc:rpc-api:1.0.0'
-
-    implementation 'com.bt.rpc:rpc-client:1.0.0'
-//    compileOnly 'com.bt.rpc:rpc-common:1.0.0'
+    api "com.bt.rpc:rpc-api:$rpcVersion"
+    implementation "com.bt.rpc:rpc-client:$rpcVersion"
 
     annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusVersion}")
 //    api 'org.reflections:reflections:0.10.2'

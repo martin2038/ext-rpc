@@ -4,10 +4,8 @@
  */
 package com.bt.rpc.runtime;
 
-import java.util.Optional;
 import java.util.Set;
 
-import com.bt.rpc.internal.SerialEnum;
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.runtime.annotations.ConfigItem;
 

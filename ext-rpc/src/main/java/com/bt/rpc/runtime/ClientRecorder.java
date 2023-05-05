@@ -4,8 +4,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.function.Supplier;
 
-import javax.inject.Named;
-
 import com.bt.rpc.client.RpcClientFactory;
 import com.bt.rpc.runtime.bridge.FacConfigImpl;
 import com.bt.rpc.runtime.bridge.FactoryConfig;
@@ -14,6 +12,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
+import jakarta.inject.Named;
 import org.jboss.logging.Logger;
 
 @Recorder

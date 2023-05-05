@@ -5,13 +5,9 @@
 package com.bt.rpc.deployment;
 
 import java.net.MalformedURLException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Named;
 
 import com.bt.rpc.client.RpcClientFactory;
 import com.bt.rpc.runtime.ClientConfig;
@@ -20,7 +16,8 @@ import com.bt.rpc.runtime.ServerApp;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.nativeimage.NativeImageProxyDefinitionBuildItem;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
 import org.jboss.logging.Logger;
 
 import static com.bt.rpc.deployment.RpcProcessor.RPC_SERVICE;
