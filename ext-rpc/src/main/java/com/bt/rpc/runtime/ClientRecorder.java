@@ -19,18 +19,17 @@ import org.jboss.logging.Logger;
 public class ClientRecorder implements com.bt.rpc.runtime.Recorder {
     private static final Logger LOG = Logger.getLogger(ClientRecorder.class);
 
-
     static final String CACHE_MANAGER = "com.bt.rpc.client.CacheManager";
 
     public RuntimeValue<FactoryConfig> createManagedChannel(String urlString) throws MalformedURLException {
         var url = new URL(urlString);
-        return new RuntimeValue<>(new FacConfigImpl(url.getHost(),url.getPort()<0?url.getDefaultPort() : url.getPort(),
+        return new RuntimeValue<>(new FacConfigImpl(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort(),
                 "https".equals(url.getProtocol())));
     }
 
     public Supplier<RpcClientFactory> clientFactorySupplier(RuntimeValue<FactoryConfig> factoryConfigRuntimeValue,
                                                             String appName) {
-        return ()->{
+        return () -> {
             var conf = factoryConfigRuntimeValue.getValue();
 
             var channelBuilder =
@@ -41,17 +40,17 @@ public class ClientRecorder implements com.bt.rpc.runtime.Recorder {
                 channelBuilder.usePlaintext();
             }
 
-            var fac =  new RpcClientFactory(appName,channelBuilder.build());
+            var fac = new RpcClientFactory(appName, channelBuilder.build());
 
             Object cacheManager = null;
             try {
                 var beans = Arc.container().select(Class.forName(CACHE_MANAGER));
-                if(beans.isResolvable()){
+                if (beans.isResolvable()) {
                     cacheManager = beans.get();
                     LOG.info("Found  CacheManager in clientFactorySupplier :   " + cacheManager);
                 }
             } catch (ClassNotFoundException e) {
-                LOG.error("error get " + CACHE_MANAGER,e);
+                LOG.error("error get " + CACHE_MANAGER, e);
             }
 
             fac.setDefaultCacheManager(cacheManager);
@@ -60,69 +59,68 @@ public class ClientRecorder implements com.bt.rpc.runtime.Recorder {
         };
     }
 
-
     public Supplier<Object> rpcClientSupplier(Class rpcService, String app) {
         return () -> {
-                for (InstanceHandle<RpcClientFactory> hander : Arc.container().select(RpcClientFactory.class).handles()) {
-                    for (var anno : hander.getBean().getQualifiers()) {
-                        if (anno.annotationType() == Named.class && app.equals(((Named) anno).value())) {
-                            return hander.get().get(rpcService);
-                        }
+            for (InstanceHandle<RpcClientFactory> hander : Arc.container().select(RpcClientFactory.class).handles()) {
+                for (var anno : hander.getBean().getQualifiers()) {
+                    if (anno.annotationType() == Named.class && app.equals(((Named) anno).value())) {
+                        return hander.get().get(rpcService);
                     }
                 }
-                LOG.warn("Error Found rpcService  " + rpcService  +" in app : " + app);
-                return null;
+            }
+            LOG.warn("Error Found rpcService  " + rpcService + " in app : " + app);
+            return null;
         };
     }
 
 }
-    //
-    //public Supplier<Object> MyBatisMappedTypeSupplier(String name, RuntimeValue<SqlSessionManager> sqlSessionManager) {
-    //    return () -> {
-    //        try {
-    //            return sqlSessionManager.getValue().getConfiguration().getTypeHandlerRegistry()
-    //                    .getTypeHandler(Resources.classForName(name));
-    //        } catch (ClassNotFoundException e) {
-    //            return null;
-    //        }
-    //    };
-    //}
-    //
-    //public Supplier<Object> MyBatisMappedJdbcTypeSupplier(String name, RuntimeValue<SqlSessionManager> sqlSessionManager) {
-    //    return () -> {
-    //        try {
-    //            return sqlSessionManager.getValue().getConfiguration().getTypeHandlerRegistry()
-    //                    .getTypeHandler(Resources.classForName(name));
-    //        } catch (ClassNotFoundException e) {
-    //            return null;
-    //        }
-    //    };
-    //}
+//
+//public Supplier<Object> MyBatisMappedTypeSupplier(String name, RuntimeValue<SqlSessionManager> sqlSessionManager) {
+//    return () -> {
+//        try {
+//            return sqlSessionManager.getValue().getConfiguration().getTypeHandlerRegistry()
+//                    .getTypeHandler(Resources.classForName(name));
+//        } catch (ClassNotFoundException e) {
+//            return null;
+//        }
+//    };
+//}
+//
+//public Supplier<Object> MyBatisMappedJdbcTypeSupplier(String name, RuntimeValue<SqlSessionManager> sqlSessionManager) {
+//    return () -> {
+//        try {
+//            return sqlSessionManager.getValue().getConfiguration().getTypeHandlerRegistry()
+//                    .getTypeHandler(Resources.classForName(name));
+//        } catch (ClassNotFoundException e) {
+//            return null;
+//        }
+//    };
+//}
 
-    //public Supplier<Object> MyBatisSqlSessionFactorySupplier(RuntimeValue<SqlSessionFactory> sqlSessionFactory) {
-    //    return sqlSessionFactory::getValue;
-    //}
+//public Supplier<Object> MyBatisSqlSessionFactorySupplier(RuntimeValue<SqlSessionFactory> sqlSessionFactory) {
+//    return sqlSessionFactory::getValue;
+//}
 
-    //public RuntimeValue<Configuration> createConfiguration() {
-    //    return new RuntimeValue<>(new Configuration());
-    //}
-    //
-    //public RuntimeValue<SqlSessionFactory> createSqlSessionFactory(
-    //        ConfigurationFactory configurationFactory,
-    //        SqlSessionFactoryBuilder builder,
-    //        MyBatisRuntimeConfig myBatisRuntimeConfig,
-    //        MyBatisDataSourceRuntimeConfig myBatisDataSourceRuntimeConfig,
-    //        String dataSourceName,
-    //        List<String> mappers,
-    //        List<String> mappedTypes,
-    //        List<String> mappedJdbcTypes) {
-    //    Configuration configuration = configurationFactory.createConfiguration();
-    //    setupConfiguration(configuration, myBatisRuntimeConfig, myBatisDataSourceRuntimeConfig, dataSourceName);
-    //    addMappers(configuration, mappedTypes, mappedJdbcTypes, mappers);
-    //
-    //    SqlSessionFactory sqlSessionFactory = builder.build(configuration);
-    //    return new RuntimeValue<>(sqlSessionFactory);
-    //}
+//public RuntimeValue<Configuration> createConfiguration() {
+//    return new RuntimeValue<>(new Configuration());
+//}
+//
+//public RuntimeValue<SqlSessionFactory> createSqlSessionFactory(
+//        ConfigurationFactory configurationFactory,
+//        SqlSessionFactoryBuilder builder,
+//        MyBatisRuntimeConfig myBatisRuntimeConfig,
+//        MyBatisDataSourceRuntimeConfig myBatisDataSourceRuntimeConfig,
+//        String dataSourceName,
+//        List<String> mappers,
+//        List<String> mappedTypes,
+//        List<String> mappedJdbcTypes) {
+//    Configuration configuration = configurationFactory.createConfiguration();
+//    setupConfiguration(configuration, myBatisRuntimeConfig, myBatisDataSourceRuntimeConfig, dataSourceName);
+//    addMappers(configuration, mappedTypes, mappedJdbcTypes, mappers);
+//
+//    SqlSessionFactory sqlSessionFactory = builder.build(configuration);
+//    return new RuntimeValue<>(sqlSessionFactory);
+//}
 /*
     private void addMappers(Configuration configuration,
             List<String> mappedTypes, List<String> mappedJdbcTypes, List<String> mappers) {

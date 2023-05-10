@@ -113,7 +113,7 @@ public interface ClientProcessor {
 
             var clzName = i.getName().getName();
             //proxy.produce(new NativeImageProxyDefinitionBuildItem(clzName));
-            LOG.debug("CDI ClientProxy RpcService : " + clzName + " -> " + i.getApp());
+            LOG.info("CDI ClientProxy RpcService : " + clzName + " -> " + i.getApp());
             syntheticBeanBuildItemBuildProducer.produce(configurator.done());
         }
 
