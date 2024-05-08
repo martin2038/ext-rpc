@@ -10,11 +10,16 @@ dependencies {
 //    implementation platform("io.quarkus:quarkus-bom:${quarkusPlatformVersion}")
 
 //    api "io.quarkus:quarkus-arc:${quarkusVersion}"
-    compileOnly "io.quarkus:quarkus-arc:${quarkusVersion}"
+    implementation "io.quarkus:quarkus-arc:${quarkusMiniSupport}"
+
 
     // maven provided
-    compileOnly "org.graalvm.nativeimage:svm:$graalSdkVersion"
-    implementation "com.bt.rpc:rpc-client:$rpcVersion"
+//    compileOnly "org.graalvm.nativeimage:svm:$graalSdkVersion"
+    //only contains the classes required to develop substitutions.
+    compileOnly 'org.graalvm.sdk:nativeimage:24.0.1'
 
-    annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusVersion}")
+
+    implementation "tech.krpc:rpc-client:$rpcVersion"
+
+    annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusMiniSupport}")
 }

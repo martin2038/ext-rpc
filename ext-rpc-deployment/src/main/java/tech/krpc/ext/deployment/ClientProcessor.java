@@ -2,17 +2,17 @@
  * Martin.Cong
  * Copyright (c) 2021-2021 All Rights Reserved.
  */
-package com.bt.rpc.deployment;
+package tech.krpc.ext.deployment;
 
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import com.bt.rpc.client.RpcClientFactory;
-import com.bt.rpc.runtime.ClientConfig;
-import com.bt.rpc.runtime.ClientRecorder;
-import com.bt.rpc.runtime.ServerApp;
+import tech.krpc.client.RpcClientFactory;
+import tech.krpc.ext.runtime.ClientConfig;
+import tech.krpc.ext.runtime.ClientRecorder;
+import tech.krpc.ext.runtime.ServerApp;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
@@ -20,28 +20,27 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import org.jboss.logging.Logger;
 
-import static com.bt.rpc.deployment.RpcProcessor.RPC_SERVICE;
-
 /**
  *
  * @author Martin.C
  * @version 2021/12/07 6:01 PM
  */
 public interface ClientProcessor {
+
     Logger LOG = Logger.getLogger(ClientProcessor.class);
 
     static void genRpcClientFactorys(ClientConfig config, BuildProducer<RpcServiceMBI> clientServiceMBIS,
-                                      BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
+                                     BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
                                      //BuildProducer<NativeImageProxyDefinitionBuildItem> proxy,
-                                      ClientRecorder recorder, CombinedIndexBuildItem indexBuildItem) throws MalformedURLException {
+                                     ClientRecorder recorder, CombinedIndexBuildItem indexBuildItem) throws MalformedURLException {
 
-        if( config.apps.isEmpty()){
+        if (config.apps.isEmpty()) {
             LOG.info("==== SKip genRpcClientFactorys ..");
             return;
         }
 
-        var services =  indexBuildItem.getIndex().getAnnotations(RPC_SERVICE)
-                .stream().map(it-> {
+        var services = indexBuildItem.getIndex().getAnnotations(RpcProcessor.RPC_SERVICE)
+                .stream().map(it -> {
                     try {
                         return Class.forName(it.target().asClass().name().toString());
                     } catch (ClassNotFoundException e) {
@@ -49,24 +48,22 @@ public interface ClientProcessor {
                     }
                 }).collect(Collectors.toSet());
 
-
         //var proxySet = new HashSet<Class>();
         for (Entry<String, ServerApp> entry : config.apps.entrySet()) {
             String app = entry.getKey();
             ServerApp host = entry.getValue();
 
-            var matched = services.stream().filter(it->host.isMatch(it.getName())).collect(Collectors.toList());
+            var matched = services.stream().filter(it -> host.isMatch(it.getName())).collect(Collectors.toList());
 
-            if(matched.isEmpty()){
-                LOG.info("=== Ignore Empty Service Found for : "+ host);
+            if (matched.isEmpty()) {
+                LOG.info("=== Ignore Empty Service Found for : " + host);
                 continue;
             }
 
-            matched.forEach(s->{
-                clientServiceMBIS.produce(new RpcServiceMBI(s,app));
+            matched.forEach(s -> {
+                clientServiceMBIS.produce(new RpcServiceMBI(s, app));
                 //proxySet.add(s);
             });
-
 
             var channelRuntime = recorder.createManagedChannel(host.url);
 
@@ -75,13 +72,12 @@ public interface ClientProcessor {
                     .scope(ApplicationScoped.class)
                     .unremovable()
                     //.destroyer(ClientDestory.class)
-                    .supplier(recorder.clientFactorySupplier(channelRuntime,app));
+                    .supplier(recorder.clientFactorySupplier(channelRuntime, app));
 
             configurator.defaultBean();
             configurator.addQualifier().annotation(Named.class).addValue("value", app).done();
 
-
-            LOG.info("=== Set RpcClientFactory [ "+ matched.size() + " -> "+host.url+"/"+app + " ] : "
+            LOG.info("=== Set RpcClientFactory [ " + matched.size() + " -> " + host.url + "/" + app + " ] : "
                     + matched.stream().map(Class::getSimpleName).collect(Collectors.joining(",")));
             syntheticBeanBuildItemBuildProducer.produce(configurator.done());
         }
@@ -95,10 +91,9 @@ public interface ClientProcessor {
 
     }
 
-
     static void genRpcClients(ClientRecorder recorder,
-                               List<RpcServiceMBI> serviceMBIS,
-                                      BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer) {
+                              List<RpcServiceMBI> serviceMBIS,
+                              BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer) {
 
         for (RpcServiceMBI i : serviceMBIS) {
 

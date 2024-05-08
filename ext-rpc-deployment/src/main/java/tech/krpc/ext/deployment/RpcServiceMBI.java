@@ -1,9 +1,9 @@
-package com.bt.rpc.deployment;
+package tech.krpc.ext.deployment;
 
 import io.quarkus.builder.item.MultiBuildItem;
 
 public final class RpcServiceMBI extends MultiBuildItem {
-    private final Class name;
+    private final Class  name;
     private final String app;
 
     public RpcServiceMBI(Class name, String app) {

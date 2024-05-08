@@ -1,14 +1,14 @@
 dependencies {
 //    implementation platform("io.quarkus:quarkus-bom:${quarkusPlatformVersion}")
 //    api "io.quarkus:quarkus-arc-deployment:${quarkusPlatformVersion}"
-    compileOnly "io.quarkus:quarkus-arc-deployment:${quarkusVersion}"
+    compileOnly "io.quarkus:quarkus-arc-deployment:${quarkusMiniSupport}"
 //    api "io.quarkus:quarkus-agroal-deployment:${quarkusPlatformVersion}"
-    api project(':ext-rpc')
+    implementation project(':ext-rpc')
 
-    api "com.bt.rpc:rpc-api:$rpcVersion"
-    implementation "com.bt.rpc:rpc-client:$rpcVersion"
+    implementation "tech.krpc:rpc-api:$rpcVersion"
+    implementation "tech.krpc:rpc-client:$rpcVersion"
 
-    annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusVersion}")
+    annotationProcessor("io.quarkus:quarkus-extension-processor:${quarkusMiniSupport}")
 //    api 'org.reflections:reflections:0.10.2'
 
 //    testImplementation('io.quarkus:quarkus-junit5-internal')

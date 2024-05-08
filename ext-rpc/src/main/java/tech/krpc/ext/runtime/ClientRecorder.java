@@ -1,12 +1,9 @@
-package com.bt.rpc.runtime;
+package tech.krpc.ext.runtime;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.function.Supplier;
 
-import com.bt.rpc.client.RpcClientFactory;
-import com.bt.rpc.runtime.bridge.FacConfigImpl;
-import com.bt.rpc.runtime.bridge.FactoryConfig;
 import io.grpc.ManagedChannelBuilder;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
@@ -14,12 +11,15 @@ import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import jakarta.inject.Named;
 import org.jboss.logging.Logger;
+import tech.krpc.client.RpcClientFactory;
+import tech.krpc.ext.runtime.bridge.FacConfigImpl;
+import tech.krpc.ext.runtime.bridge.FactoryConfig;
 
 @Recorder
-public class ClientRecorder implements com.bt.rpc.runtime.Recorder {
+public class ClientRecorder implements tech.krpc.ext.runtime.Recorder {
     private static final Logger LOG = Logger.getLogger(ClientRecorder.class);
 
-    static final String CACHE_MANAGER = "com.bt.rpc.client.CacheManager";
+    static final String CACHE_MANAGER = "tech.krpc.client.CacheManager";
 
     public RuntimeValue<FactoryConfig> createManagedChannel(String urlString) throws MalformedURLException {
         var url = new URL(urlString);

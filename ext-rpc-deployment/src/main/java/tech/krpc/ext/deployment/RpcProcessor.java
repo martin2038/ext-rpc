@@ -1,4 +1,4 @@
-package com.bt.rpc.deployment;
+package tech.krpc.ext.deployment;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -8,11 +8,10 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-import com.bt.rpc.annotation.Doc;
-import com.bt.rpc.annotation.RpcService;
-import com.bt.rpc.model.RpcResult;
-import com.bt.rpc.runtime.ClientConfig;
-import com.bt.rpc.runtime.ClientRecorder;
+import tech.krpc.annotation.Doc;
+import tech.krpc.annotation.RpcService;
+import tech.krpc.ext.runtime.ClientConfig;
+import tech.krpc.ext.runtime.ClientRecorder;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -28,6 +27,7 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.Type;
 import org.jboss.jandex.Type.Kind;
 import org.jboss.logging.Logger;
+import tech.krpc.model.RpcResult;
 
 public class RpcProcessor {
 
@@ -222,7 +222,7 @@ public class RpcProcessor {
 
         @Override
         public boolean getAsBoolean() {
-            return checkExists("com.bt.rpc.client.ClientContext");
+            return checkExists("tech.krpc.client.ClientContext");
         }
     }
 
@@ -250,7 +250,7 @@ public class RpcProcessor {
 
 
     static boolean isServer() {
-        return   checkExists("com.bt.rpc.server.ServerContext");
+        return   checkExists("tech.krpc.server.ServerContext");
     }
 
     static boolean checkExists(String client){
@@ -258,7 +258,7 @@ public class RpcProcessor {
             Class.forName(client);
             return true;
         } catch (ClassNotFoundException e) {
-            LOG.debug("=== IGNORE NotFound : " + client);
+            LOG.warn("=== IGNORE NotFound RpcProcessor : " + client);
         }
         return false;
 

@@ -1,4 +1,4 @@
-package com.bt.rpc.runtime.bridge;
+package tech.krpc.ext.runtime.bridge;
 
 import java.util.List;
 
@@ -10,9 +10,6 @@ public interface FactoryConfig {
 
     boolean isTls();
 
-
     List<Class> getGlobalFilters();
-
-
 
 }

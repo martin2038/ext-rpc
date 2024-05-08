@@ -2,14 +2,14 @@
  * Martin.Cong
  * Copyright (c) 2021-2021 All Rights Reserved.
  */
-package com.bt.rpc.deployment;
+package tech.krpc.ext.deployment;
 
 import java.util.List;
 import java.util.Map;
 
-import com.bt.rpc.client.RpcClientFactory;
 import io.quarkus.builder.item.MultiBuildItem;
 import io.quarkus.runtime.RuntimeValue;
+import tech.krpc.client.RpcClientFactory;
 
 /**
  *
@@ -19,16 +19,15 @@ import io.quarkus.runtime.RuntimeValue;
 
 public final class ClientFactoryMBI extends MultiBuildItem {
 
-
     private RuntimeValue<RpcClientFactory> factoryRuntimeValue;
 
     public ClientFactoryMBI(RuntimeValue<RpcClientFactory> factoryRuntimeValue) {
         this.factoryRuntimeValue = factoryRuntimeValue;
     }
 
-    private List<Class> globalFilters ;
+    private List<Class> globalFilters;
 
-    private Map<Class,List<Class>> filters ;
+    private Map<Class, List<Class>> filters;
 
     String app;
 

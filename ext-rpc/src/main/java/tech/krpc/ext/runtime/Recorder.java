@@ -1,11 +1,11 @@
-package com.bt.rpc.runtime;
+package tech.krpc.ext.runtime;
 
 import java.net.MalformedURLException;
 import java.util.function.Supplier;
 
-import com.bt.rpc.client.RpcClientFactory;
-import com.bt.rpc.runtime.bridge.FactoryConfig;
 import io.quarkus.runtime.RuntimeValue;
+import tech.krpc.client.RpcClientFactory;
+import tech.krpc.ext.runtime.bridge.FactoryConfig;
 
 @io.quarkus.runtime.annotations.Recorder
 public interface Recorder {

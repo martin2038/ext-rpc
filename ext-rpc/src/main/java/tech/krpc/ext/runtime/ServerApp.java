@@ -2,7 +2,7 @@
  * Martin.Cong
  * Copyright (c) 2021-2021 All Rights Reserved.
  */
-package com.bt.rpc.runtime;
+package tech.krpc.ext.runtime;
 
 import java.util.Set;
 
@@ -29,10 +29,8 @@ public class ServerApp {
     @ConfigItem(defaultValue = "JSON")
     public String serial;
 
-
-
     /**
-     * 服务扫描的package，多个英文逗号隔开,如 com.btyx.admin.auth
+     * 服务扫描的package，多个英文逗号隔开,如 com.example.auth
      */
     @ConfigItem
     public Set<String> scan;
@@ -45,26 +43,12 @@ public class ServerApp {
                 '}';
     }
 
-
-    public boolean isMatch(String rpcClass){
-        for(var s : scan){
-            if(rpcClass.startsWith(s)){
+    public boolean isMatch(String rpcClass) {
+        for (var s : scan) {
+            if (rpcClass.startsWith(s)) {
                 return true;
             }
         }
         return false;
     }
-
-    ///**
-    // * MyBatis environment id
-    // */
-    //@ConfigItem
-    //public Optional<String> environment;
-    //
-    //
-    ///**
-    // * MyBatis initial sql
-    // */
-    //@ConfigItem(name = "initial-sql")
-    //public Optional<String> initialSql;
 }

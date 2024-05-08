@@ -2,7 +2,7 @@
  * Martin.Cong
  * Copyright (c) 2021-2021 All Rights Reserved.
  */
-package com.bt.rpc.runtime.bridge;
+package tech.krpc.ext.runtime.bridge;
 
 import java.util.List;
 
